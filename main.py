@@ -924,7 +924,7 @@ def main():
             date_str = date.strftime("%Y%m%d")
 
             # Construct base path for this date
-            stream_path = f"{BASE_URL}/{product}/{stream}/{year}/{month}/{day}"
+            stream_path = f"{BASE_URL}/{stream}/{product}/{year}/{month}/{day}"
             # Try the most common pattern
             date_base = f"{stream_path.rsplit('/', 1)[0]}/{product}.daily.{date_str}"
 
