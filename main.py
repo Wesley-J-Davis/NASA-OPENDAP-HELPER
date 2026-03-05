@@ -747,7 +747,7 @@ def generate_download_scripts(urls, output_dir="downloads"):
             filename = f"geos_fp_subset_{i:04d}.nc"
             f.write(f"# File {i}/{len(urls)}\n")
             f.write(f'echo "Downloading {filename}..."\n')
-            f.write(f'curl -g -o "{output_dir}/{filename}" "{url}"\n')
+            f.write(f'curl -g -L -H "Accept: application/x-netcdf" -o "{output_dir}/{filename}" "{url}"\n')
             f.write(f'if [ $? -eq 0 ]; then\n')
             f.write(f'    echo "  ✓ Success"\n')
             f.write(f'else\n')
@@ -773,7 +773,7 @@ def generate_download_scripts(urls, output_dir="downloads"):
             filename = f"geos_fp_subset_{i:04d}.nc"
             f.write(f"# File {i}/{len(urls)}\n")
             f.write(f'echo "Downloading {filename}..."\n')
-            f.write(f'wget -O "{output_dir}/{filename}" "{url}"\n')
+            f.write(f'wget --content-disposition -O "{output_dir}/{filename}" "{url}"\n')
             f.write(f'if [ $? -eq 0 ]; then\n')
             f.write(f'    echo "  ✓ Success"\n')
             f.write(f'else\n')
