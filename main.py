@@ -148,7 +148,8 @@ def select_data_source(product):
         choice = input("\nEnter option (1-2): ").strip()
         
         if choice == '1':
-            return 'latest', None, None
+            stream = select_data_stream()
+            return 'latest', None, stream
         
         elif choice == '2':
             dates = get_historical_dates(product)
@@ -285,14 +286,14 @@ def get_dataset_info(product, source_type, dates=None, stream=None):
     print_section("Connecting to OPeNDAP server...")
     
     if source_type == 'latest':
-        url = f"{BASE_URL}/{product}.latest"
+        url = f"{BASE_URL}/{stream}/{product}.latest"
         print(f"URL: {url}")
         
         try:
             print("Loading dataset metadata (this may take a moment)...")
             ds = xr.open_dataset(url)
             print("✓ Connected successfully!\n")
-            return ds, url, None
+            return ds, url, stream
         except Exception as e:
             print(f"✗ Error connecting to OPeNDAP: {e}")
             print("\nThis product may not be available via the .latest endpoint.")
