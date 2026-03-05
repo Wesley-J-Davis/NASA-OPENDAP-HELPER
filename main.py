@@ -14,7 +14,7 @@ import requests
 from pathlib import Path
 
 # GEOS-FP Products catalog
-PRODUCTS = {
+PRODUCTS_CATALOG = {
     'inst1_2d_hwl_Nx': '2d,1-Hourly,Instantaneous,Single-Level,Forecast,Hyperwall',
     'inst1_2d_lfo_Nx': 'GEOS5 FP 2d time-averaged land surface forcing',
     'inst1_2d_smp_Nx': 'GEOS5 FP 2d instantaneous diagnostics for SMAP',
@@ -56,14 +56,67 @@ def print_section(text):
     print(f"{'-' * 70}\n")
 
 
-def select_product():
+def check_product_availability(product, base_url, timeout=5):
+    """Check if a product is available on the OPeNDAP server"""
+    test_url = f"{base_url}/{product}.latest.dds"
+    
+    try:
+        response = requests.head(test_url, timeout=timeout, allow_redirects=True)
+        return response.status_code == 200
+    except:
+        # If HEAD fails, try GET on the DDS endpoint
+        try:
+            response = requests.get(test_url, timeout=timeout)
+            return response.status_code == 200 and 'Dataset' in response.text
+        except:
+            return False
+
+
+def validate_products(show_progress=True):
+    """Validate which products are actually available"""
+    if show_progress:
+        print_section("Validating Product Availability")
+        print("Checking which products are accessible on the OPeNDAP server...")
+        print("(This may take a moment)\n")
+    
+    available_products = {}
+    
+    for i, (product, description) in enumerate(PRODUCTS_CATALOG.items(), 1):
+        if show_progress:
+            print(f"[{i:2d}/{len(PRODUCTS_CATALOG)}] Checking {product}...", end=' ')
+            sys.stdout.flush()
+        
+        if check_product_availability(product, BASE_URL):
+            available_products[product] = description
+            if show_progress:
+                print("✓")
+        else:
+            if show_progress:
+                print("✗ (not available)")
+    
+    if show_progress:
+        print(f"\n✓ Found {len(available_products)} available products")
+    
+    return available_products
+
+
+def select_product(products=None):
     """Let user select a product"""
     print_header("GEOS-FP Product Selection")
     
-    print("Available products:\n")
-    products_list = list(PRODUCTS.keys())
+    if products is None:
+        # Use all products from catalog without validation
+        products = PRODUCTS_CATALOG
+        print("⚠ Note: Not all products may be available\n")
     
-    for i, (product, description) in enumerate(PRODUCTS.items(), 1):
+    if not products:
+        print("✗ No products available. Please check your connection.")
+        sys.exit(1)
+    
+    print(f"Available products ({len(products)}):\n")
+    products_list = list(products.keys())
+    
+    for i, (product, description) in enumerate(products.items(), 1):
         print(f"{i:2d}. {product:20s} - {description}")
     
     while True:
@@ -158,16 +211,12 @@ def get_historical_dates(product):
 
 
 def get_historical_files(product, date):
-    """List available files for a specific date"""
+    """Construct path for historical data"""
     year = f"Y{date.year}"
     month = f"M{date.month:02d}"
     day = f"D{date.day:02d}"
     
-    # Common filename patterns for GEOS-FP
     date_str = date.strftime("%Y%m%d")
-    
-    # Try to construct the file pattern
-    # GEOS-FP files typically follow: GEOS.fp.asm.PRODUCT.YYYYMMDD_HHMMz.V01.nc4
     base_path = f"{BASE_URL}/{product}/{year}/{month}/{day}"
     
     return base_path, date_str
@@ -188,6 +237,11 @@ def get_dataset_info(product, source_type, dates=None):
             return ds, url
         except Exception as e:
             print(f"✗ Error connecting to OPeNDAP: {e}")
+            print("\nThis product may not be available via the .latest endpoint.")
+            print("Suggestions:")
+            print("  1. Try a different product")
+            print("  2. Try historical data access")
+            print("  3. Check https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/ for available datasets")
             sys.exit(1)
     
     else:  # historical
@@ -200,35 +254,36 @@ def get_dataset_info(product, source_type, dates=None):
         
         # Try different common filename patterns
         patterns = [
+            # Daily aggregation (preferred)
+            f"{BASE_URL}/{product}/{year}/M{date.month:02d}/{product}.daily.{date_str}",
+            # Individual hourly files
             f"{base_path}/GEOS.fp.asm.{product}.{date_str}_0000.V01.nc4",
             f"{base_path}/GEOS.fp.asm.{product}.{date_str}_00z.V01.nc4",
+            f"{base_path}/GEOS.fp.fcst.{product}.{date_str}_00+{date_str}_0000.V01.nc4",
             f"{base_path}/{product}.{date_str}.nc4",
+            # Alternative structures
+            f"{BASE_URL}/{product}/Y{date.year}/M{date.month:02d}/D{date.day:02d}/{product}.{date_str}.nc4",
         ]
-        
-        # Also try the aggregated daily file
-        daily_pattern = f"{base_path.rsplit('/', 1)[0]}/{product}.daily.{date_str}"
-        patterns.append(daily_pattern)
         
         ds = None
         working_url = None
         
         for pattern in patterns:
             try:
-                print(f"  Trying: {pattern}")
+                print(f"  Trying: {pattern.split('/')[-1]}")
                 ds = xr.open_dataset(pattern)
                 working_url = pattern
                 print("  ✓ Success!")
                 break
             except Exception as e:
-                print(f"  ✗ Failed: {str(e)[:50]}...")
                 continue
         
         if ds is None:
-            print("\n✗ Could not find data for this date.")
-            print("\nTip: Historical data structure may vary. You can:")
-            print("  1. Check the NCCS data portal directly")
-            print("  2. Use the .latest endpoint for recent data")
-            print(f"  3. Try browsing: {base_path}/")
+            print("\n✗ Could not find data for this date with standard patterns.")
+            print("\nTroubleshooting options:")
+            print(f"  1. Browse manually: {base_path.replace('.nc4', '')}/")
+            print("  2. Check the NCCS data portal for the exact file structure")
+            print("  3. Use .latest endpoint for recent data")
             
             manual = input("\nEnter full OPeNDAP URL manually? (y/n): ").strip().lower()
             if manual == 'y':
@@ -741,8 +796,21 @@ def main():
     print("This tool helps you build subset URLs for GEOS-FP data")
     print("from the NCCS OPeNDAP server.\n")
     
+    # Ask if user wants to validate products first
+    print("Options:")
+    print("  1. Show all products (faster, but some may not be available)")
+    print("  2. Validate product availability first (slower, but shows only working products)")
+    
+    validate = input("\nEnter option (1-2, default=1): ").strip()
+    
+    if validate == '2':
+        available_products = validate_products(show_progress=True)
+        products = available_products
+    else:
+        products = PRODUCTS_CATALOG
+    
     # Step 1: Select product
-    product = select_product()
+    product = select_product(products)
     
     # Step 2: Select data source (latest or historical)
     source_type, dates = select_data_source(product)
@@ -784,7 +852,7 @@ def main():
         for date in dates:
             base_path, date_str = get_historical_files(product, date)
             # Use the base_url from the connection test
-            date_base = base_url.rsplit('.nc', 1)[0]
+            date_base = base_url.rsplit('.nc', 1)[0] if '.nc' in base_url else base_url
             url = build_opendap_url(date_base, variables, ds,
                                    time_range, level_range, spatial_ranges)
             urls.append(url)
