@@ -602,8 +602,11 @@ def get_spatial_indices(ds):
 def build_opendap_url(base_url, variables, ds, time_range, level_range, spatial_ranges):
     """Build the final OPeNDAP URL with constraints"""
     
-    url = f"{base_url}.nc?"
-    
+    # Don't add .nc if it's already in the base_url or if base_url already has extension
+    if base_url.endswith('.nc4') or base_url.endswith('.nc'):
+        url = f"{base_url}?"
+    else:
+        url = f"{base_url}.nc?"    
     constraints = []
     
     # Build variable constraints
