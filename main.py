@@ -899,7 +899,7 @@ def main():
     
     if source_type == 'latest':
         # Single URL for latest data
-        url = build_opendap_url(base_url + ".nc", variables, ds, 
+        url = build_opendap_url(base_url, variables, ds, 
                                time_range, level_range, spatial_ranges)
         urls.append(url)
         
