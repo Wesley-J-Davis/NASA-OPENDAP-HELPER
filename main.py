@@ -602,11 +602,7 @@ def get_spatial_indices(ds):
 def build_opendap_url(base_url, variables, ds, time_range, level_range, spatial_ranges):
     """Build the final OPeNDAP URL with constraints"""
     
-    # Don't add .nc if it's already in the base_url or if base_url already has extension
-    if base_url.endswith('.nc4') or base_url.endswith('.nc'):
-        url = f"{base_url}?"
-    else:
-        url = f"{base_url}.nc?"    
+    url = f"{base_url}?"
     constraints = []
     
     # Build variable constraints
@@ -891,7 +887,7 @@ def main():
     
     if source_type == 'latest':
         # Single URL for latest data
-        url = build_opendap_url(base_url, variables, ds, 
+        url = build_opendap_url(base_url + ".nc", variables, ds, 
                                time_range, level_range, spatial_ranges)
         urls.append(url)
         
