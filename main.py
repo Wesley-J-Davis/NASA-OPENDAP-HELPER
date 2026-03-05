@@ -148,7 +148,7 @@ def select_data_source(product):
         choice = input("\nEnter option (1-2): ").strip()
         
         if choice == '1':
-            return 'latest', None
+            return 'latest', None, None
         
         elif choice == '2':
             dates = get_historical_dates(product)
