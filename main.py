@@ -194,7 +194,7 @@ def find_historical_file(product, date, stream, base_url, timeout=5):
     date_str = date.strftime("%Y%m%d")
     
     # Base path with stream
-    stream_path = f"{base_url}/{product}/{stream}/{year}/{month}/{day}"
+    stream_path = f"{base_url}/{stream}/{product}/{year}/{month}/{day}"
     
     # Common filename patterns for GEOS-FP
     patterns = []
