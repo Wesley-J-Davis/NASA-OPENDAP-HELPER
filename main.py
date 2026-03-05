@@ -186,40 +186,22 @@ def select_data_stream():
 def find_historical_file(product, date, stream, base_url, timeout=5):
     """
     Find the actual file for a given date and stream.
+    Historical data structure: BASE_URL/STREAM/PRODUCT/PRODUCT.YYYYMMDD_HH
     Returns (success, url, message)
     """
-    year = f"Y{date.year}"
-    month = f"M{date.month:02d}"
-    day = f"D{date.day:02d}"
     date_str = date.strftime("%Y%m%d")
     
-    # Base path with stream
-    stream_path = f"{base_url}/{stream}/{product}/{year}/{month}/{day}"
+    # Historical data path (no year/month/day subdirectories)
+    base_path = f"{base_url}/{stream}/{product}"
     
-    # Common filename patterns for GEOS-FP
-    patterns = []
+    # Try to find any file for this date (try different hours)
+    hours = ['00', '06', '12', '18']  # Common 6-hourly outputs
     
-    # Pattern 1: Standard GEOS FP format
-    patterns.append(f"{stream_path}/GEOS.fp.asm.{product}.{date_str}_0000.V01.nc4")
-    patterns.append(f"{stream_path}/GEOS.fp.asm.{product}.{date_str}_00z.V01.nc4")
-    
-    # Pattern 2: Forecast format
-    patterns.append(f"{stream_path}/GEOS.fp.fcst.{product}.{date_str}_00+{date_str}_0000.V01.nc4")
-    
-    # Pattern 3: Daily aggregation (most common for data access)
-    patterns.append(f"{stream_path.rsplit('/', 1)[0]}/{product}.daily.{date_str}")
-    
-    # Pattern 4: Simple naming
-    patterns.append(f"{stream_path}/{product}.{date_str}.nc4")
-    
-    # Pattern 5: Try the directory as an aggregated dataset
-    patterns.append(stream_path)
-    
-    # Try each pattern
-    for pattern in patterns:
+    for hour in hours:
+        pattern = f"{base_path}/{product}.{date_str}_{hour}"
         try:
             # Quick check if URL is accessible
-            test_url = f"{pattern}.dds" if not pattern.endswith('.nc4') else f"{pattern}.dds"
+            test_url = f"{pattern}.dds"
             response = requests.head(test_url, timeout=timeout, allow_redirects=True)
             
             if response.status_code == 200:
@@ -230,9 +212,9 @@ def find_historical_file(product, date, stream, base_url, timeout=5):
         except:
             continue
     
-    # If nothing found, return the most likely path for user inspection
-    likely_path = f"{stream_path.rsplit('/', 1)[0]}/{product}.daily.{date_str}"
-    return False, likely_path, "Not found with standard patterns"
+    # If nothing found, return the expected path
+    likely_path = f"{base_path}/{product}.{date_str}_00"
+    return False, likely_path, "Not found - check if date exists"
 
 def get_historical_dates(product):
     """Get specific date or date range for historical data"""
@@ -319,7 +301,7 @@ def get_dataset_info(product, source_type, dates=None, stream=None):
             print("  2. Try historical data access")
             print("  3. Check https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/ for available datasets")
             sys.exit(1)
-    
+
     else:  # historical
         # For historical, we need to find files for each date
         date = dates[0]
@@ -342,12 +324,12 @@ def get_dataset_info(product, source_type, dates=None, stream=None):
                 success = False
         
         if not success:
-            print(f"✗ Could not find data with standard patterns.")
+            print(f"✗ Could not find data.")
             print(f"\nExpected location: {url}")
             print("\nTroubleshooting:")
-            print(f"  1. Check if data exists: {BASE_URL}/{product}/{stream}/")
+            print(f"  1. Check if data exists: {BASE_URL}/{stream}/{product}/")
             print(f"  2. Try different stream (assim/fcast/seamless)")
-            print(f"  3. Browse manually: https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/{product}/")
+            print(f"  3. Browse manually: https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/{stream}/{product}/")
             
             manual = input("\nEnter full OPeNDAP URL manually? (y/n): ").strip().lower()
             if manual == 'y':
@@ -367,6 +349,7 @@ def get_dataset_info(product, source_type, dates=None, stream=None):
             else:
                 sys.exit(1)
 
+#####
 
 def display_dataset_info(ds):
     """Display comprehensive dataset information"""
@@ -911,26 +894,33 @@ def main():
         
         # Estimate size
         estimate_data_size(ds, variables, time_range, level_range, spatial_ranges)
-        
+#####        
     else:  # historical
         # Multiple URLs for historical data
         print(f"Building URLs for {len(dates)} date(s)...")
         
+        # Ask user which hour(s) to use
+        print("\nHistorical files are typically available at 6-hourly intervals:")
+        print("  00, 06, 12, 18 UTC")
+        hour_choice = input("Which hour(s)? (e.g., '00' or '00,06,12,18' or 'all', default='00'): ").strip()
+        
+        if hour_choice.lower() == 'all':
+            hours = ['00', '06', '12', '18']
+        elif ',' in hour_choice:
+            hours = [h.strip() for h in hour_choice.split(',')]
+        else:
+            hours = [hour_choice if hour_choice else '00']
+
         for date in dates:
-            # Build path with stream
-            year = f"Y{date.year}"
-            month = f"M{date.month:02d}"
-            day = f"D{date.day:02d}"
             date_str = date.strftime("%Y%m%d")
-
-            # Construct base path for this date
-            stream_path = f"{BASE_URL}/{stream}/{product}/{year}/{month}/{day}"
-            # Try the most common pattern
-            date_base = f"{stream_path.rsplit('/', 1)[0]}/{product}.daily.{date_str}"
-
-            url = build_opendap_url(date_base, variables, ds,
-                                   time_range, level_range, spatial_ranges)
-            urls.append(url)
+            for hour in hours:
+                # Construct base path for this date and hour
+                date_base = f"{BASE_URL}/{stream}/{product}/{product}.{date_str}_{hour}"
+                
+                url = build_opendap_url(date_base, variables, ds,
+                                       time_range, level_range, spatial_ranges)
+                urls.append(url)
+        
         
         print(f"✓ Generated {len(urls)} URLs")
         
