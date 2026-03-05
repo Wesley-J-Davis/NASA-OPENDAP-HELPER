@@ -893,36 +893,53 @@ def main():
         
         # Estimate size
         estimate_data_size(ds, variables, time_range, level_range, spatial_ranges)
-#####        
+
     else:  # historical
         # Multiple URLs for historical data
         print(f"Building URLs for {len(dates)} date(s)...")
         
+        print("\n⚠ Important: Historical file structure differs from .latest")
+        print("Each 6-hourly file has its own smaller time dimension.")
+        print(f"You selected time indices [{time_range[0]}:{time_range[1]}] based on .latest")
+        print("\nOptions:")
+        print("  1. Use all times from each file (recommended)")
+        print("  2. Use first time only from each file")
+        print("  3. Keep original selection (may cause errors if out of bounds)")
+        
+        time_choice = input("\nEnter option (1-3, default=1): ").strip()
+        
+        if time_choice == '2':
+            historical_time_range = (0, 0, 1)  # Just first time
+        elif time_choice == '3':
+            historical_time_range = time_range  # Keep original
+        else:
+            historical_time_range = (0, 99999, 1)  # All times (will be clamped by actual size)
+        
         # Ask user which hour(s) to use
         print("\nHistorical files are typically available at 6-hourly intervals:")
         print("  00, 06, 12, 18 UTC")
-        hour_choice = input("Which hour(s)? (e.g., '00' or '00,06,12,18' or 'all', default='00'): ").strip()
+        hour_choice = input("Which hour(s)? (e.g., '00' or '00,06,12,18' or 'all', default='all'): ").strip()
         
-        if hour_choice.lower() == 'all':
+        if hour_choice.lower() == 'all' or hour_choice == '':
             hours = ['00', '06', '12', '18']
         elif ',' in hour_choice:
             hours = [h.strip() for h in hour_choice.split(',')]
         else:
-            hours = [hour_choice if hour_choice else '00']
-
+            hours = [hour_choice]
+        
         for date in dates:
             date_str = date.strftime("%Y%m%d")
+            
             for hour in hours:
                 # Construct base path for this date and hour
                 date_base = f"{BASE_URL}/{stream}/{product}/{product}.{date_str}_{hour}"
                 
                 url = build_opendap_url(date_base, variables, ds,
-                                       time_range, level_range, spatial_ranges)
+                                       historical_time_range, level_range, spatial_ranges)
                 urls.append(url)
         
-        
-        print(f"✓ Generated {len(urls)} URLs")
-        
+        print(f"✓ Generated {len(urls)} URLs ({len(dates)} dates × {len(hours)} hours)")
+
         # Estimate total size
         size_per_file = estimate_data_size(ds, variables, time_range, 
                                           level_range, spatial_ranges)
