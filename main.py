@@ -648,7 +648,9 @@ def build_opendap_url(base_url, variables, ds, time_range, level_range, spatial_
     
     # Add coordinate variables
     t_start, t_end, t_stride = time_range
-    if t_stride == 1:
+    if t_end >= 99999:
+        constraints.append(f"time[0:]")  # All times
+    elif t_stride == 1:
         constraints.append(f"time[{t_start}:{t_end}]")
     else:
         constraints.append(f"time[{t_start}:{t_stride}:{t_end}]")
