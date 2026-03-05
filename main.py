@@ -839,6 +839,15 @@ def generate_download_scripts(urls, output_dir="downloads"):
     
     return curl_script, wget_script, python_script, url_list
 
+def get_time_size(url, timeout=5):
+    """Get the actual time dimension size from a file"""
+    try:
+        ds = xr.open_dataset(url)
+        size = len(ds.time)
+        ds.close()
+        return size
+    except:
+        return None
 
 def main():
     """Main interactive workflow"""
@@ -935,9 +944,18 @@ def main():
             for hour in hours:
                 # Construct base path for this date and hour
                 date_base = f"{BASE_URL}/{stream}/{product}/{product}.{date_str}_{hour}"
+                # Get actual time dimension size for this file
+                actual_time_size = get_time_size(date_base)
                 
+                if actual_time_size:
+                    # Use all available times (0 to size-1)
+                    file_time_range = (0, actual_time_size - 1, 1)
+                else:
+                    # Fallback: use a small safe range
+                    file_time_range = (0, 0, 1)
+
                 url = build_opendap_url(date_base, variables, ds,
-                                       historical_time_range, level_range, spatial_ranges)
+                                       file_time_range, level_range, spatial_ranges)
                 urls.append(url)
         
         print(f"✓ Generated {len(urls)} URLs ({len(dates)} dates × {len(hours)} hours)")
