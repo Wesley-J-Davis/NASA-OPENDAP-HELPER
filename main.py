@@ -151,19 +151,96 @@ def select_data_source(product):
             return 'latest', None
         
         elif choice == '2':
-            return 'historical', get_historical_dates(product)
+            dates = get_historical_dates(product)
+            stream = select_data_stream()
+            return 'historical', dates, stream
         
         else:
             print("Invalid option. Please choose 1 or 2.")
 
+def select_data_stream():
+    """Select data stream for historical data"""
+    print_section("Data Stream Selection")
+    
+    print("GEOS-FP historical data is organized into streams:\n")
+    print("  1. assim    - Assimilated data (analysis)")
+    print("  2. fcast    - Forecast data")
+    print("  3. seamless - Seamless combination of analysis and forecast")
+    print("\nMost users want 'assim' for reanalysis or 'seamless' for continuous time series.")
+    
+    while True:
+        choice = input("\nEnter option (1-3, default=3 for seamless): ").strip()
+        
+        if choice == '' or choice == '3':
+            print("✓ Selected: seamless")
+            return 'seamless'
+        elif choice == '1':
+            print("✓ Selected: assim")
+            return 'assim'
+        elif choice == '2':
+            print("✓ Selected: fcast")
+            return 'fcast'
+        else:
+            print("Invalid option. Please choose 1-3.")
+
+def find_historical_file(product, date, stream, base_url, timeout=5):
+    """
+    Find the actual file for a given date and stream.
+    Returns (success, url, message)
+    """
+    year = f"Y{date.year}"
+    month = f"M{date.month:02d}"
+    day = f"D{date.day:02d}"
+    date_str = date.strftime("%Y%m%d")
+    
+    # Base path with stream
+    stream_path = f"{base_url}/{product}/{stream}/{year}/{month}/{day}"
+    
+    # Common filename patterns for GEOS-FP
+    patterns = []
+    
+    # Pattern 1: Standard GEOS FP format
+    patterns.append(f"{stream_path}/GEOS.fp.asm.{product}.{date_str}_0000.V01.nc4")
+    patterns.append(f"{stream_path}/GEOS.fp.asm.{product}.{date_str}_00z.V01.nc4")
+    
+    # Pattern 2: Forecast format
+    patterns.append(f"{stream_path}/GEOS.fp.fcst.{product}.{date_str}_00+{date_str}_0000.V01.nc4")
+    
+    # Pattern 3: Daily aggregation (most common for data access)
+    patterns.append(f"{stream_path.rsplit('/', 1)[0]}/{product}.daily.{date_str}")
+    
+    # Pattern 4: Simple naming
+    patterns.append(f"{stream_path}/{product}.{date_str}.nc4")
+    
+    # Pattern 5: Try the directory as an aggregated dataset
+    patterns.append(stream_path)
+    
+    # Try each pattern
+    for pattern in patterns:
+        try:
+            # Quick check if URL is accessible
+            test_url = f"{pattern}.dds" if not pattern.endswith('.nc4') else f"{pattern}.dds"
+            response = requests.head(test_url, timeout=timeout, allow_redirects=True)
+            
+            if response.status_code == 200:
+                # Try to open with xarray to verify
+                ds = xr.open_dataset(pattern)
+                ds.close()
+                return True, pattern, "Found"
+        except:
+            continue
+    
+    # If nothing found, return the most likely path for user inspection
+    likely_path = f"{stream_path.rsplit('/', 1)[0]}/{product}.daily.{date_str}"
+    return False, likely_path, "Not found with standard patterns"
 
 def get_historical_dates(product):
     """Get specific date or date range for historical data"""
     print_section("Historical Data Selection")
     
     print("GEOS-FP historical data is organized by date:")
-    print("  Structure: PRODUCT/YEAR/MONTH/DAY/")
-    print("  Example: inst3_3d_asm_Np/Y2024/M01/D15/\n")
+    print("  Structure: PRODUCT/STREAM/YEAR/MONTH/DAY/")
+    print("  Example: inst3_3d_asm_Np/fcast/Y2024/M01/D15/\n")
     
     print("Options:")
     print("  1. Single date")
@@ -221,8 +298,7 @@ def get_historical_files(product, date):
     
     return base_path, date_str
 
-
-def get_dataset_info(product, source_type, dates=None):
+def get_dataset_info(product, source_type, dates=None, stream=None):
     """Connect to OPeNDAP and get dataset structure"""
     print_section("Connecting to OPeNDAP server...")
     
@@ -234,7 +310,7 @@ def get_dataset_info(product, source_type, dates=None):
             print("Loading dataset metadata (this may take a moment)...")
             ds = xr.open_dataset(url)
             print("✓ Connected successfully!\n")
-            return ds, url
+            return ds, url, None
         except Exception as e:
             print(f"✗ Error connecting to OPeNDAP: {e}")
             print("\nThis product may not be available via the .latest endpoint.")
@@ -245,60 +321,51 @@ def get_dataset_info(product, source_type, dates=None):
             sys.exit(1)
     
     else:  # historical
-        # For historical, connect to first date to get structure
+        # For historical, we need to find files for each date
         date = dates[0]
-        base_path, date_str = get_historical_files(product, date)
         
-        print(f"Checking historical data for {date.date()}...")
-        print(f"Path: {base_path}/")
+        print(f"Searching for historical data for {date.date()}...")
+        print(f"Data stream: {stream}\n")
         
-        # Try different common filename patterns
-        patterns = [
-            # Daily aggregation (preferred)
-            f"{BASE_URL}/{product}/{year}/M{date.month:02d}/{product}.daily.{date_str}",
-            # Individual hourly files
-            f"{base_path}/GEOS.fp.asm.{product}.{date_str}_0000.V01.nc4",
-            f"{base_path}/GEOS.fp.asm.{product}.{date_str}_00z.V01.nc4",
-            f"{base_path}/GEOS.fp.fcst.{product}.{date_str}_00+{date_str}_0000.V01.nc4",
-            f"{base_path}/{product}.{date_str}.nc4",
-            # Alternative structures
-            f"{BASE_URL}/{product}/Y{date.year}/M{date.month:02d}/D{date.day:02d}/{product}.{date_str}.nc4",
-        ]
+        # Try to find the file
+        success, url, message = find_historical_file(product, date, stream, BASE_URL)
         
-        ds = None
-        working_url = None
-        
-        for pattern in patterns:
+        if success:
+            print(f"✓ Found: {url}")
             try:
-                print(f"  Trying: {pattern.split('/')[-1]}")
-                ds = xr.open_dataset(pattern)
-                working_url = pattern
-                print("  ✓ Success!")
-                break
+                print("Loading dataset metadata...")
+                ds = xr.open_dataset(url)
+                print("✓ Connected successfully!\n")
+                return ds, url, stream
             except Exception as e:
-                continue
+                print(f"✗ Error opening dataset: {e}")
+                success = False
         
-        if ds is None:
-            print("\n✗ Could not find data for this date with standard patterns.")
-            print("\nTroubleshooting options:")
-            print(f"  1. Browse manually: {base_path.replace('.nc4', '')}/")
-            print("  2. Check the NCCS data portal for the exact file structure")
-            print("  3. Use .latest endpoint for recent data")
+        if not success:
+            print(f"✗ Could not find data with standard patterns.")
+            print(f"\nExpected location: {url}")
+            print("\nTroubleshooting:")
+            print(f"  1. Check if data exists: {BASE_URL}/{product}/{stream}/")
+            print(f"  2. Try different stream (assim/fcast/seamless)")
+            print(f"  3. Browse manually: https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/{product}/")
             
             manual = input("\nEnter full OPeNDAP URL manually? (y/n): ").strip().lower()
             if manual == 'y':
                 url = input("URL: ").strip()
                 try:
                     ds = xr.open_dataset(url)
-                    working_url = url
                     print("✓ Connected successfully!\n")
+                    # Extract stream from URL if possible
+                    for s in DATA_STREAMS:
+                        if f"/{s}/" in url:
+                            stream = s
+                            break
+                    return ds, url, stream
                 except Exception as e:
                     print(f"✗ Error: {e}")
                     sys.exit(1)
             else:
                 sys.exit(1)
-        
-        return ds, working_url
 
 
 def display_dataset_info(ds):
@@ -813,10 +880,10 @@ def main():
     product = select_product(products)
     
     # Step 2: Select data source (latest or historical)
-    source_type, dates = select_data_source(product)
+    source_type, dates, stream = select_data_source(product)
     
     # Step 3: Connect and get info
-    ds, base_url = get_dataset_info(product, source_type, dates)
+    ds, base_url, stream = get_dataset_info(product, source_type, dates, stream)
     display_dataset_info(ds)
     
     # Step 4: Select variables
@@ -850,9 +917,17 @@ def main():
         print(f"Building URLs for {len(dates)} date(s)...")
         
         for date in dates:
-            base_path, date_str = get_historical_files(product, date)
-            # Use the base_url from the connection test
-            date_base = base_url.rsplit('.nc', 1)[0] if '.nc' in base_url else base_url
+            # Build path with stream
+            year = f"Y{date.year}"
+            month = f"M{date.month:02d}"
+            day = f"D{date.day:02d}"
+            date_str = date.strftime("%Y%m%d")
+
+            # Construct base path for this date
+            stream_path = f"{BASE_URL}/{product}/{stream}/{year}/{month}/{day}"
+            # Try the most common pattern
+            date_base = f"{stream_path.rsplit('/', 1)[0]}/{product}.daily.{date_str}"
+
             url = build_opendap_url(date_base, variables, ds,
                                    time_range, level_range, spatial_ranges)
             urls.append(url)
