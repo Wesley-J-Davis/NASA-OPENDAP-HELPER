@@ -40,7 +40,7 @@ PRODUCTS_CATALOG = {
 }
 
 BASE_URL = "https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg"
-
+DATA_STREAMS = ['assim', 'fcast', 'seamless']
 
 def print_header(text):
     """Print formatted header"""
@@ -194,9 +194,21 @@ def find_historical_file(product, date, stream, base_url, timeout=5):
     
     # Historical data path (no year/month/day subdirectories)
     base_path = f"{base_url}/{stream}/{product}"
-    
+
+    # First, try the stream directory as an aggregated dataset (especially for assim)
+    try:
+        stream_dir = f"{base_url}/{stream}/{product}"
+        test_url = f"{stream_dir}.dds"
+        response = requests.head(test_url, timeout=timeout, allow_redirects=True)
+        if response.status_code == 200:
+            ds = xr.open_dataset(stream_dir)
+            ds.close()
+            return True, stream_dir, "Found aggregated dataset"
+    except:
+        pass    
+
     # Try to find any file for this date (try different hours)
-    hours = ['00', '06', '12', '18']  # Common 6-hourly outputs
+    hours = ['00', '03', '06', '09', '12', '15', '18', '21']  # Common 3-hourly outputs
     
     for hour in hours:
         pattern = f"{base_path}/{product}.{date_str}_{hour}"
@@ -341,9 +353,9 @@ def get_dataset_info(product, source_type, dates=None, stream=None):
                     # Extract stream from URL if possible
                     for s in DATA_STREAMS:
                         if f"/{s}/" in url:
-                            stream = s
+                            extracted_stream = s
                             break
-                    return ds, url, stream
+                    return ds, url, extracted_stream
                 except Exception as e:
                     print(f"✗ Error: {e}")
                     sys.exit(1)
@@ -907,71 +919,83 @@ def main():
         estimate_data_size(ds, variables, time_range, level_range, spatial_ranges)
 
     else:  # historical
-        # Multiple URLs for historical data
-        print(f"Building URLs for {len(dates)} date(s)...")
-        
-        print("\n⚠ Important: Historical file structure differs from .latest")
-        print("Each 6-hourly file has its own smaller time dimension.")
-        print(f"You selected time indices [{time_range[0]}:{time_range[1]}] based on .latest")
-        print("\nOptions:")
-        print("  1. Use all times from each file (recommended)")
-        print("  2. Use first time only from each file")
-        print("  3. Keep original selection (may cause errors if out of bounds)")
-        
-        time_choice = input("\nEnter option (1-3, default=1): ").strip()
-        
-        if time_choice == '2':
-            historical_time_range = (0, 0, 1)  # Just first time
-        elif time_choice == '3':
-            historical_time_range = time_range  # Keep original
-        else:
-            historical_time_range = (0, 99999, 1)  # All times (will be clamped by actual size)
-        
-        # Ask user which hour(s) to use
-        print("\nHistorical files are typically available at 6-hourly intervals:")
-        print("  00, 06, 12, 18 UTC")
-        hour_choice = input("Which hour(s)? (e.g., '00' or '00,06,12,18' or 'all', default='all'): ").strip()
-        
-        if hour_choice.lower() == 'all' or hour_choice == '':
-            hours = ['00', '06', '12', '18']
-        elif ',' in hour_choice:
-            hours = [h.strip() for h in hour_choice.split(',')]
-        else:
-            hours = [hour_choice]
-        
-        for date in dates:
-            date_str = date.strftime("%Y%m%d")
+        if dates and '202' not in base_url.split('/')[-1]:  # Aggregated dataset
+            print("\n⚠ Detected aggregated dataset (all dates in one dataset)")
+            print("This dataset contains multiple dates aggregated together.")
+            print("Will generate a single URL for the entire time range.\n")
             
-            for hour in hours:
-                # Construct base path for this date and hour
-                date_base = f"{BASE_URL}/{stream}/{product}/{product}.{date_str}_{hour}"
-                # Get actual time dimension size for this file
-                actual_time_size = get_time_size(date_base)
-                
-                if actual_time_size:
-                    # Use all available times (0 to size-1)
-                    file_time_range = (0, actual_time_size - 1, 1)
-                else:
-                    # Fallback: use a small safe range
-                    file_time_range = (0, 0, 1)
-
-                url = build_opendap_url(date_base, variables, ds,
-                                       file_time_range, level_range, spatial_ranges)
-                urls.append(url)
-        
-        print(f"✓ Generated {len(urls)} URLs ({len(dates)} dates × {len(hours)} hours)")
-
-        # Estimate total size
-        size_per_file = estimate_data_size(ds, variables, time_range, 
-                                          level_range, spatial_ranges)
-        total_size = size_per_file * len(urls)
-        
-        if total_size < 1024**3:
-            total_str = f"{total_size/1024**2:.1f} MB"
+            # Single URL for aggregated dataset
+            url = build_opendap_url(base_url, variables, ds,
+                                   time_range, level_range, spatial_ranges)
+            urls.append(url)
+            
+            # Estimate size
+            size_bytes = estimate_data_size(ds, variables, time_range, level_range, spatial_ranges)
         else:
-            total_str = f"{total_size/1024**3:.1f} GB"
+            # Multiple URLs for historical data
+            print(f"Building URLs for {len(dates)} date(s)...")
+            print("\n⚠ Important: Historical file structure differs from .latest")
+            print("Each 6-hourly file has its own smaller time dimension.")
+            print(f"You selected time indices [{time_range[0]}:{time_range[1]}] based on .latest")
+            print("\nOptions:")
+            print("  1. Use all times from each file (recommended)")
+            print("  2. Use first time only from each file")
+            print("  3. Keep original selection (may cause errors if out of bounds)")
         
-        print(f"\nTotal estimated size for all files: {total_str}")
+            time_choice = input("\nEnter option (1-3, default=1): ").strip()
+        
+            if time_choice == '2':
+                historical_time_range = (0, 0, 1)  # Just first time
+            elif time_choice == '3':
+                historical_time_range = time_range  # Keep original
+            else:
+                historical_time_range = (0, 99999, 1)  # All times (will be clamped by actual size)
+        
+            # Ask user which hour(s) to use
+            print("\nHistorical files are typically available at 6-hourly intervals:")
+            print("  00, 06, 12, 18 UTC")
+            hour_choice = input("Which hour(s)? (e.g., '00' or '00,06,12,18' or 'all', default='all'): ").strip()
+        
+            if hour_choice.lower() == 'all' or hour_choice == '':
+                hours = ['00', '06', '12', '18']
+            elif ',' in hour_choice:
+                hours = [h.strip() for h in hour_choice.split(',')]
+            else:
+                hours = [hour_choice]
+        
+            for date in dates:
+                date_str = date.strftime("%Y%m%d")
+            
+                for hour in hours:
+                    # Construct base path for this date and hour
+                    date_base = f"{BASE_URL}/{stream}/{product}/{product}.{date_str}_{hour}"
+                    # Get actual time dimension size for this file
+                    actual_time_size = get_time_size(date_base)
+                
+                    if actual_time_size:
+                        # Use all available times (0 to size-1)
+                        file_time_range = (0, actual_time_size - 1, 1)
+                    else:
+                        # Fallback: use a small safe range
+                        file_time_range = (0, 0, 1)
+
+                    url = build_opendap_url(date_base, variables, ds,
+                                       file_time_range, level_range, spatial_ranges)
+                    urls.append(url)
+        
+            print(f"✓ Generated {len(urls)} URLs ({len(dates)} dates × {len(hours)} hours)")
+
+            # Estimate total size
+            size_per_file = estimate_data_size(ds, variables, time_range, 
+                                          level_range, spatial_ranges)
+            total_size = size_per_file * len(urls)
+        
+            if total_size < 1024**3:
+                total_str = f"{total_size/1024**2:.1f} MB"
+            else:
+                total_str = f"{total_size/1024**3:.1f} GB"
+        
+            print(f"\nTotal estimated size for all files: {total_str}")
     
     # Display final URL(s)
     print_header("Generated OPeNDAP URL(s)")
