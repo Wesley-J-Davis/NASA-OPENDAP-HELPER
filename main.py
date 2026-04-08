@@ -2,7 +2,10 @@
 """
 Interactive OPeNDAP URL Builder for GEOS-FP Data
 Allows users to build subset URLs with tab-completion and guided prompts
-Supports historical data access and export to curl/wget commands
+Supports historical data access 
+Exports python xarray commands to file
+Exports downloads urls to file
+Downloads files directly
 """
 
 import xarray as xr
