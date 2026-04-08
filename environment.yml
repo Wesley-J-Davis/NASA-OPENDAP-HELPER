@@ -1,0 +1,10 @@
+name: geos-opendap-helper
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - xarray
+  - numpy
+  - requests
+  - netcdf4
