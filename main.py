@@ -211,7 +211,7 @@ def find_historical_file(product, date, stream, base_url, timeout=5):
         pass    
 
     # Try to find any file for this date (try different hours)
-    hours = ['00', '03', '06', '09', '12', '15', '18', '21']  # Common 3-hourly outputs
+    hours = ['00', '06', '12', '18']  # Common 6-hourly outputs
     
     for hour in hours:
         pattern = f"{base_path}/{product}.{date_str}_{hour}"
