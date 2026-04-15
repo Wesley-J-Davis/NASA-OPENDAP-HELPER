@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenDAP Server Download Tips</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .opendap-guide {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h3 {
+            color: #2980b9;
+            margin-top: 30px;
+        }
+        h4 {
+            color: #16a085;
+            margin-bottom: 10px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+            word-break: break-all;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .variant, .download-method {
+            background-color: #f8fcfef0;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        pre {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        code {
+            font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+        }
+        ol li {
+            margin-bottom: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        strong {
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+
+<div class="opendap-guide">
+    <h2>OpenDAP Server Download Tips</h2>
+
+    <section id="step-1">
+        <h3>Step 1 - Access Data Server</h3>
+        <p>OpenDAP data server link: <a href="https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg" target="_blank" rel="noopener noreferrer">https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg</a></p>
+    </section>
+
+    <section id="step-2">
+        <h3>Step 2 - fcast / assim / seamless</h3>
+        
+        <div class="variant">
+            <h4>fcast</h4>
+            <p>GEOS forecasts - two variants:</p>
+            <ul>
+                <li>
+                    <strong>LATEST</strong><br>
+                    Example: <a href="https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/inst1_2d_hwl_Nx.latest" target="_blank" rel="noopener noreferrer">https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/inst1_2d_hwl_Nx.latest</a><br>
+                    <em>Time variable starts 10 days prior to current time, leading up to current time.</em>
+                </li>
+                <br>
+                <li>
+                    <strong>HISTORICAL</strong><br>
+                    Example: <a href="https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/fcast/inst1_2d_hwl_Nx.20260414_00" target="_blank" rel="noopener noreferrer">https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/fcast/inst1_2d_hwl_Nx.20260414_00</a><br>
+                    <em>Time variable starts at the labeled assimilation time and goes for 10 days.</em>
+                </li>
+            </ul>
+        </div>
+
+        <div class="variant">
+            <h4>assim</h4>
+            <p>All GEOS assimilations from 01 Dec 2017 to most recent.</p>
+            <p>Example: <a href="https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/assim/tavg3_3d_udt_Nv" target="_blank" rel="noopener noreferrer">https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/assim/tavg3_3d_udt_Nv</a><br>
+            <em>Time variable starts at 01 Dec 2017 and goes up to the most recent assimilation time.</em></p>
+        </div>
+
+        <div class="variant">
+            <h4>seamless</h4>
+            <p>Assimilations up to a date and then 10 days of forecast data for that assimilation date.</p>
+            <p>Example: <a href="https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/assim/tavg3_3d_udt_Nv.20260328_12" target="_blank" rel="noopener noreferrer">https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/assim/tavg3_3d_udt_Nv.20260328_12</a><br>
+            <em>Time variable starts at 01 Dec 2017 and is assimilations up to the labeled date, plus 10 days of forecast data beyond that.</em></p>
+        </div>
+    </section>
+
+    <section id="step-3">
+        <h3>Step 3 - Choose Collection to Download</h3>
+        <ol>
+            <li><strong>inst1_2d_hwl_Nx</strong> - 2d, 1-Hourly, Instantaneous, Single-Level, Forecast, Hyperwall</li>
+            <li><strong>inst1_2d_lfo_Nx</strong> - GEOS5 FP 2d time-averaged land surface forcing</li>
+            <li><strong>inst1_2d_smp_Nx</strong> - GEOS5 FP 2d instantaneous diagnostics for SMAP</li>
+            <li><strong>inst1_2d_wwi_Nx</strong> - 2d, 1-Hourly, Instantaneous, Single-Level, Forecast, WorldWinds</li>
+            <li><strong>inst3_2d_met_Nx</strong> - 2d, 3-Hourly, Instantaneous, Single-Level, Forecast, Forecast Fields</li>
+            <li><strong>inst3_2d_smp_Nx</strong> - GEOS5 FP 2d instantaneous diagnostics for SMAP</li>
+            <li><strong>inst3_3d_aer_Np</strong> - 3d, 3-Hourly, Instantaneous, Pressure-Level, Forecast, Aerosol Concentrations</li>
+            <li><strong>inst3_3d_aer_Nv</strong> - GEOS5 FP 3d instantaneous aerosol diagnostics</li>
+            <li><strong>inst3_3d_asm_Cp</strong> - 3d, 3-Hourly, Instantaneous, Pressure-Level, Forecast Fields</li>
+            <li><strong>inst3_3d_asm_Np</strong> - GEOS5 FP 3d assimilated state on pressure levels</li>
+            <li><strong>inst3_3d_asm_Nv</strong> - GEOS5 FP 3d assimilated state on native levels</li>
+            <li><strong>inst3_3d_chm_Np</strong> - 3d, 3-Hourly, Instantaneous, Pressure-Level, Forecast, Chemistry</li>
+            <li><strong>inst3_3d_ext_Np</strong> - 3d, 3-Hourly, Instantaneous, Pressure-Level, Forecast, Aerosol Extinction</li>
+            <li><strong>inst3_3d_tag_Np</strong> - GEOS5 FP 3d tag</li>
+            <li><strong>tavg1_2d_flx_Nx</strong> - GEOS5 FP 2d time-averaged surface flux diagnostics</li>
+            <li><strong>tavg1_2d_lfo_Nx</strong> - GEOS5 FP 2d instantaneous land surface forcing</li>
+            <li><strong>tavg1_2d_lnd_Nx</strong> - GEOS5 FP 2d time-averaged land surface diagnostics</li>
+            <li><strong>tavg1_2d_rad_Nx</strong> - GEOS5 FP 2d time-averaged radiation diagnostics</li>
+            <li><strong>tavg1_2d_slv_Nx</strong> - GEOS5 FP 2d time-averaged single level diagnostics</li>
+            <li><strong>tavg3_2d_aer_Nx</strong> - GEOS5 FP 2d time-averaged primary aerosol diagnostics</li>
+            <li><strong>tavg3_2d_smp_Nx</strong> - GEOS5 FP 2d time-averaged diagnostics for SMAP</li>
+            <li><strong>tavg3_3d_asm_Nv</strong> - GEOS5.10.0 FP 3d time-averaged assimilated state on native levels</li>
+        </ol>
+    </section>
+
+    <section id="step-4">
+        <h3>Step 4 - Choose Whether to Download Entire Dataset or Just a Subset</h3>
+        
+        <div class="download-method">
+            <h4>Entire Dataset</h4>
+            <p><strong>Using Python:</strong></p>
+<pre><code>import xarray as xr
+from pathlib import Path
+import sys
+
+output_dir = Path('downloads')
+output_dir.mkdir(exist_ok=True)
+
+urls = ["https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/fcast/inst3_3d_aer_Np.latest"]
+
+print(f'Downloading {len(urls)} files...')
+
+for i, url in enumerate(urls, 1):
+    filename = output_dir / f'geos_fp_subset_{i:04d}.nc'
+    print(f'[{i}/{len(urls)}] Downloading {filename.name}...')
+    try:
+        ds = xr.open_dataset(url)
+        ds.load().to_netcdf(filename)
+        print(f'  ✓ Success')
+    except Exception as e:
+        print(f'  ✗ Failed: {e}')
+</code></pre>
+        </div>
+
+        <div class="download-method">
+            <h4>Subsetting the Dataset</h4>
+            <p>The Python code above remains the same, but the URL will depend on your subsetting constraints. The format is as follows:</p>
+            <pre><code>https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/fcast/inst3_3d_aer_Np.latest?var[times][lats][lons][levels],time[times],lat[lats],lon[lons],level[levels]</code></pre>
+
+            <p><strong>Example of subsetting by time/lat/lon while keeping all levels for multiple variables:</strong></p>
+            <pre><code>https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/fcast/inst3_3d_aer_Np.latest?lwi[57:80][0:720][0:1151],ps[57:80][500:720][800:1151],time[57:80],lat[500:720],lon[800:1151]</code></pre>
+
+            <ul>
+                <li>If levels are left out of the call, it implicitly means "include all levels" in the download.</li>
+                <li>Desired variables from the collection are explicitly defined along with their subset.</li>
+                <li>At the end of the URL, the overall dimensions to be subsetted must be explicitly defined.</li>
+            </ul>
+        </div>
+    </section>
+</div>
+
+</body>
+</html>
