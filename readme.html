@@ -167,8 +167,8 @@ for i, url in enumerate(urls, 1):
         <div class="download-method">
             <h4>Subsetting the Dataset with Python</h4>
             <p>The code above remains the same, but the URL will depend on your subsetting constraints. The format is as follows:</p>
-            <pre><code>https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/fcast/inst3_3d_aer_Np.latest?var[times][lats][lons][levels],time[times],lat[lats],lon[lons],level[levels]</code></pre>
-            <pre><code>https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/seamless/inst1_2d_lfo_Nx.latest?var[times][lats][lons],time[times],lat[lats],lon[lons]</code></pre>
+            <pre><code>${opendap_url}?var[times][lats][lons][levels],time[times],lat[lats],lon[lons],level[levels]</code></pre>
+            <pre><code>${opendap_url}?var[times][lats][lons],time[times],lat[lats],lon[lons]</code></pre>
             <p><strong>Example of subsetting by time/lat/lon while keeping all levels for multiple variables:</strong></p>
             <pre><code>https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/fcast/inst3_3d_aer_Np.latest?lwi[57:80][0:720][0:1151],ps[57:80][500:720][800:1151],time[57:80],lat[500:720],lon[800:1151]</code></pre>
 
