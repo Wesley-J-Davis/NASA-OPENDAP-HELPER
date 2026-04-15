@@ -109,8 +109,19 @@
         <div class="variant">
             <h4>seamless</h4>
             <p>Assimilations up to a date and then 10 days of forecast data for that assimilation date.</p>
-            <p>Example: <a href="https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/assim/tavg3_3d_udt_Nv.20260328_12" target="_blank" rel="noopener noreferrer">https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/assim/tavg3_3d_udt_Nv.20260328_12</a><br>
-            <em>Time variable starts at 01 Dec 2017 and is assimilations up to the labeled date, plus 10 days of forecast data beyond that.</em></p>
+            <ul>
+                <li>
+                    <strong>LATEST</strong><br>
+                    Example: <a href="https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/seamless/inst1_2d_lfo_Nx.latest" target="_blank" rel="noopener noreferrer">https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/inst1_2d_hwl_Nx.latest</a><br>
+                    <em>Time variable starts 10 days prior to current time, leading up to current time.</em>
+                </li>
+                <br>
+                <li>
+                    <strong>HISTORICAL</strong><br>
+                    <p>Example: <a href="https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/seamless/tavg3_3d_udt_Nv.20260328_12" target="_blank" rel="noopener noreferrer">https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/assim/tavg3_3d_udt_Nv.20260328_12</a><br>
+                    <em>Time variable starts at 01 Dec 2017 and is assimilations up to the labeled date, plus 10 days of forecast data beyond that.</em></p>
+                </li>
+            </ul>
         </div>
     </section>
 
@@ -120,25 +131,7 @@
             <li><strong>inst1_2d_hwl_Nx</strong> - 2d, 1-Hourly, Instantaneous, Single-Level, Forecast, Hyperwall</li>
             <li><strong>inst1_2d_lfo_Nx</strong> - GEOS5 FP 2d time-averaged land surface forcing</li>
             <li><strong>inst1_2d_smp_Nx</strong> - GEOS5 FP 2d instantaneous diagnostics for SMAP</li>
-            <li><strong>inst1_2d_wwi_Nx</strong> - 2d, 1-Hourly, Instantaneous, Single-Level, Forecast, WorldWinds</li>
-            <li><strong>inst3_2d_met_Nx</strong> - 2d, 3-Hourly, Instantaneous, Single-Level, Forecast, Forecast Fields</li>
-            <li><strong>inst3_2d_smp_Nx</strong> - GEOS5 FP 2d instantaneous diagnostics for SMAP</li>
-            <li><strong>inst3_3d_aer_Np</strong> - 3d, 3-Hourly, Instantaneous, Pressure-Level, Forecast, Aerosol Concentrations</li>
-            <li><strong>inst3_3d_aer_Nv</strong> - GEOS5 FP 3d instantaneous aerosol diagnostics</li>
-            <li><strong>inst3_3d_asm_Cp</strong> - 3d, 3-Hourly, Instantaneous, Pressure-Level, Forecast Fields</li>
-            <li><strong>inst3_3d_asm_Np</strong> - GEOS5 FP 3d assimilated state on pressure levels</li>
-            <li><strong>inst3_3d_asm_Nv</strong> - GEOS5 FP 3d assimilated state on native levels</li>
-            <li><strong>inst3_3d_chm_Np</strong> - 3d, 3-Hourly, Instantaneous, Pressure-Level, Forecast, Chemistry</li>
-            <li><strong>inst3_3d_ext_Np</strong> - 3d, 3-Hourly, Instantaneous, Pressure-Level, Forecast, Aerosol Extinction</li>
-            <li><strong>inst3_3d_tag_Np</strong> - GEOS5 FP 3d tag</li>
-            <li><strong>tavg1_2d_flx_Nx</strong> - GEOS5 FP 2d time-averaged surface flux diagnostics</li>
-            <li><strong>tavg1_2d_lfo_Nx</strong> - GEOS5 FP 2d instantaneous land surface forcing</li>
-            <li><strong>tavg1_2d_lnd_Nx</strong> - GEOS5 FP 2d time-averaged land surface diagnostics</li>
-            <li><strong>tavg1_2d_rad_Nx</strong> - GEOS5 FP 2d time-averaged radiation diagnostics</li>
-            <li><strong>tavg1_2d_slv_Nx</strong> - GEOS5 FP 2d time-averaged single level diagnostics</li>
-            <li><strong>tavg3_2d_aer_Nx</strong> - GEOS5 FP 2d time-averaged primary aerosol diagnostics</li>
-            <li><strong>tavg3_2d_smp_Nx</strong> - GEOS5 FP 2d time-averaged diagnostics for SMAP</li>
-            <li><strong>tavg3_3d_asm_Nv</strong> - GEOS5.10.0 FP 3d time-averaged assimilated state on native levels</li>
+            <li> etc... </li>
         </ol>
     </section>
 
