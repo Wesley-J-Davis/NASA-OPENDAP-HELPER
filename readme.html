@@ -74,7 +74,7 @@
     <h2>OpenDAP Server Download Tips</h2>
 
     <section id="step-1">
-        <h3>Step 1 - Access Data Server</h3>
+        <h3>Step 1 - Understand structure of OpenDAP server</h3>
         <p>OpenDAP data server link: <a href="https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg" target="_blank" rel="noopener noreferrer">https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg</a></p>
     </section>
 
@@ -136,11 +136,11 @@
     </section>
 
     <section id="step-4">
-        <h3>Step 4 - Choose Whether to Download Entire Dataset or Just a Subset</h3>
+        <h3>Step 4 - Choose download method</h3>
         
         <div class="download-method">
-            <h4>Entire Dataset</h4>
-            <p><strong>Using Python:</strong></p>
+            <h4>Using Python:</h4>
+            <p><strong>Entire Dataset</strong></p>
 <pre><code>import xarray as xr
 from pathlib import Path
 import sys
@@ -165,7 +165,7 @@ for i, url in enumerate(urls, 1):
         </div>
 
         <div class="download-method">
-            <h4>Subsetting the Dataset with Python</h4>
+            <p><strong>Subsetting with Python</strong></p>
             <p>The code above remains the same, but the URL will depend on your subsetting constraints. The format is as follows:</p>
             <pre><code>{opendap_url}?var[times][lats][lons][levels],time[times],lat[lats],lon[lons],level[levels]</code></pre>
             <pre><code>{opendap_url}?var[times][lats][lons],time[times],lat[lats],lon[lons]</code></pre>
@@ -180,7 +180,7 @@ for i, url in enumerate(urls, 1):
         </div>
 
         <div class="download-method">
-            <h4>Accessing the data via Panopoly</h4>
+            <h4>Panopoly</h4>
             <p>Panoply, developed by NASA's Goddard Institute for Space Studies (GISS), is a cross-platform data visualization application.</p>
             <p> <a href="https://disc.gsfc.nasa.gov/information/howto?title=How%20to%20View%20Remote%20Data%20in%20OPeNDAP%20with%20Panoply" target="_blank" rel="noopener noreferrer">How to View Remote Data in OPeNDAP with Panoply</a>
             </p>
@@ -188,21 +188,21 @@ for i, url in enumerate(urls, 1):
         </div>
 
         <div class="download-method">
-            <h4>Accessing the data via GRADS</h4>
+            <h4>GRADS</h4>
             <p>Panoply, developed by NASA's Goddard Institute for Space Studies (GISS), is a cross-platform data visualization application.</p>
             <p> <a href="https://hdfeos.org/examples/using_grads.php" target="_blank" rel="noopener noreferrer">How to View Remote Data in OPeNDAP with GRADS</a></p>
 
         </div>
 
         <div class="download-method">
-            <h4>Accessing the data via FERRET</h4>
+            <h4>FERRET</h4>
             <p>Ferret, developed by NOAA's Pacific marine Environmental Laboratory (PMEL), Ferret is an interactive computer visualization and analysis environment designed to meet the needs of oceanographers and meteorologists analyzing large and complex gridded data sets. It runs on recent Unix and Mac systems.</p>
             <p> <a href="https://ferret.pmel.noaa.gov/Ferret/documentation/how-to-use-ferret-and-opendap-to-access-and-analyze-remote-data-1" target="_blank" rel="noopener noreferrer">How to View Remote Data in OPeNDAP with Ferret</a></p>
 
         </div>
 
         <div class="download-method">
-            <h4>Accessing the data via nccopy</h4>
+            <h4>nccopy</h4>
             <p>Curl queries fail because they only understand basic web files not the DAP streaming protocol. Instead, nccopy, a subset of the nco package in Linux systems can perform this function.</p>
             <pre><code>nccopy "https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/fcast/inst3_3d_aer_Np.latest?ps[0:0][0:10][0:10],time[0:0],lat[0:10],lon[0:10]" downloads/subset.nc</code></pre>
 
@@ -211,7 +211,6 @@ for i, url in enumerate(urls, 1):
         <div class="download-method">
             <h4>WGET and CURL</h4>
             <p>To download data from this specific OPeNDAP server from the command line, you cannot use standard web downloaders like wget or curl. You must use a tool that understands the OPeNDAP streaming protocol.</p>
-
 
         </div>
         
